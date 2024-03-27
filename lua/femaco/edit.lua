@@ -298,6 +298,18 @@ M.edit_code_block = function()
   local match_lines = vim.split(get_match_text(match_data.content, 0), "\n")
   local filetype = settings.ft_from_lang(match_data.lang)
 
+  -- trim empty lines
+  if match_lines[1] == "" then
+    table.remove(match_lines, 1)
+    match_data.range[1] = match_data.range[1] + 1
+    match_data.range[2] = 0
+  end
+  if match_lines[#match_lines] == "" then
+    table.remove(match_lines, #match_lines)
+    match_data.range[3] = match_data.range[3] - 1
+    match_data.range[4] = #match_lines[#match_lines]
+  end
+
   local indent = nil
   local lines_for_edit = match_lines
   local should_normalize_indent = settings.normalize_indent(base_filetype)
@@ -344,6 +356,7 @@ M.edit_code_block = function()
       end
       vim.api.nvim_buf_set_text(bufnr, sr, sc, er, ec, lines)
       update_range(range, lines)
+      lines_for_edit = lines
     end,
   })
   -- make sure the buffer is deleted when we close the window
