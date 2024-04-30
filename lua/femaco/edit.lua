@@ -327,7 +327,7 @@ local edit_code_block = function(bufnr, lang, match_lines, range)
   vim.api.nvim_exec("write!", true)
 
   vim.cmd("edit " .. tmpfile)
-  vim.bo.filetype = filetype
+  vim.bo.filetype = vim.bo.filetype or filetype
 
   vim.api.nvim_win_set_cursor(0, float_cursor)
   settings.post_open_float(winnr)
@@ -387,6 +387,8 @@ M.edit_code_block_auto = function(line1, line2)
     match_data.range[4] = #vim.fn.getline(line2)
   end
 
+  match_data.range[3] = match_data.range[3] - 1
+
   local srow, scol, erow, ecol = unpack(match_data.range)
   local match_lines = vim.api.nvim_buf_get_text(bufnr, srow, scol, erow, ecol, {})
 
@@ -415,6 +417,8 @@ M.edit_code_block_manual = function(lang, line1, line2)
     match_data.range[3] = line2
     match_data.range[4] = #vim.fn.getline(line2)
   end
+
+  match_data.range[3] = match_data.range[3] - 1
 
   local srow, scol, erow, ecol = unpack(match_data.range)
   local match_lines = vim.api.nvim_buf_get_text(bufnr, srow, scol, erow, ecol, {})
