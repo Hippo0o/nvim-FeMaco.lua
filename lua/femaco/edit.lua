@@ -384,7 +384,7 @@ M.edit_code_block_auto = function(line1, line2)
 
   if line2 then
     match_data.range[3] = line2
-    match_data.range[4] = #vim.fn.getline(line2)
+    match_data.range[4] = #vim.fn.getline(line2 + 1)
   end
 
   local srow, scol, erow, ecol = unpack(match_data.range)
@@ -413,7 +413,7 @@ M.edit_code_block_manual = function(lang, line1, line2)
 
   if line2 then
     match_data.range[3] = line2
-    match_data.range[4] = #vim.fn.getline(line2)
+    match_data.range[4] = #vim.fn.getline(line2 + 1)
   end
 
   local srow, scol, erow, ecol = unpack(match_data.range)
