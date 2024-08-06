@@ -288,26 +288,21 @@ local denormalize_lines = function(normalized_lines, indent_info)
   return denormalized_lines
 end
 
-M.edit_code_block = function()
-  local bufnr = vim.fn.bufnr()
+local edit_code_block = function(bufnr, lang, text, range)
   local base_filetype = vim.bo.filetype
-  local match_data = get_match_at_cursor()
-  if match_data == nil then
-    return
-  end
-  local match_lines = vim.split(get_match_text(match_data.content, 0), "\n")
-  local filetype = settings.ft_from_lang(match_data.lang)
+  local match_lines = vim.split(text, "\n")
+  local filetype = settings.ft_from_lang(lang)
 
   -- trim empty lines
   if match_lines[1] == "" then
     table.remove(match_lines, 1)
-    match_data.range[1] = match_data.range[1] + 1
-    match_data.range[2] = 0
+    range[1] = range[1] + 1
+    range[2] = 0
   end
   if match_lines[#match_lines] == "" then
     table.remove(match_lines, #match_lines)
-    match_data.range[3] = match_data.range[3] - 1
-    match_data.range[4] = #match_lines[#match_lines]
+    range[3] = range[3] - 1
+    range[4] = #match_lines[#match_lines]
   end
 
   local indent = nil
@@ -319,12 +314,11 @@ M.edit_code_block = function()
   end
 
   -- NOTE that we do this before opening the float
-  local float_cursor = get_float_cursor(match_data.range, lines_for_edit)
-  local range = match_data.range
+  local float_cursor = get_float_cursor(range, lines_for_edit)
   local winnr = settings.prepare_buffer(settings.float_opts({
     range = range,
     lines = lines_for_edit,
-    lang = match_data.lang,
+    lang = lang,
   }))
 
   vim.cmd("file " .. settings.create_tmp_filepath(filetype))
@@ -371,6 +365,58 @@ M.edit_code_block = function()
       end)
     end,
   })
+end
+
+M.edit_code_block_auto = function(line1, line2)
+  local bufnr = vim.fn.bufnr()
+  local match_data = get_match_at_cursor()
+  if match_data == nil then
+    return
+  end
+
+  if line1 then
+    match_data.range[1] = line1
+    match_data.range[2] = 0
+  end
+
+  if line2 then
+    match_data.range[3] = line2
+    match_data.range[4] = 0 -- line2 is already +1 and gets trimmed later anyway
+  end
+
+  local srow, scol, erow, ecol = unpack(match_data.range)
+  local text = table.concat(vim.api.nvim_buf_get_text(bufnr, srow, scol, erow, ecol, {}), "\n")
+
+  edit_code_block(bufnr, match_data.lang, text, match_data.range)
+end
+
+M.edit_code_block_manual = function(lang, line1, line2)
+  local bufnr = vim.fn.bufnr()
+  local match_data = nil
+
+  if not line1 and not line2 then
+    match_data = get_match_at_cursor()
+  end
+
+  match_data = match_data or {
+    range = { 0, 0, 0, 0 },
+  }
+  match_data.lang = lang
+
+  if line1 then
+    match_data.range[1] = line1
+    match_data.range[2] = 0
+  end
+
+  if line2 then
+    match_data.range[3] = line2
+    match_data.range[4] = 0
+  end
+
+  local srow, scol, erow, ecol = unpack(match_data.range)
+  local text = table.concat(vim.api.nvim_buf_get_text(bufnr, srow, scol, erow, ecol, {}), "\n")
+
+  edit_code_block(bufnr, match_data.lang, text, match_data.range)
 end
 
 return M
