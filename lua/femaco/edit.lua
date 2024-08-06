@@ -387,8 +387,6 @@ M.edit_code_block_auto = function(line1, line2)
     match_data.range[4] = #vim.fn.getline(line2)
   end
 
-  match_data.range[3] = match_data.range[3] - 1
-
   local srow, scol, erow, ecol = unpack(match_data.range)
   local match_lines = vim.api.nvim_buf_get_text(bufnr, srow, scol, erow, ecol, {})
 
@@ -417,8 +415,6 @@ M.edit_code_block_manual = function(lang, line1, line2)
     match_data.range[3] = line2
     match_data.range[4] = #vim.fn.getline(line2)
   end
-
-  match_data.range[3] = match_data.range[3] - 1
 
   local srow, scol, erow, ecol = unpack(match_data.range)
   local match_lines = vim.api.nvim_buf_get_text(bufnr, srow, scol, erow, ecol, {})
