@@ -39,7 +39,7 @@ M.settings = {
     vim.wo.signcolumn = 'no'
   end,
   -- create the path to a temporary file
-  create_tmp_filepath = function(filetype)
+  create_tmp_filepath = function(filetype, bufnr)
     return os.tmpname()
   end,
   -- if a newline should always be used, useful for multiline injections

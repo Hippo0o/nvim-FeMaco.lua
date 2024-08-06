@@ -164,7 +164,7 @@ local tbl_equal = function(left_tbl, right_tbl)
 end
 
 local get_indent_size = function(line, indent_char)
-    return #line:match("^[" .. indent_char .. "]*")
+  return #line:match("^[" .. indent_char .. "]*")
 end
 
 -- calculate indent sizes for first, last, and intermediate lines
@@ -288,9 +288,8 @@ local denormalize_lines = function(normalized_lines, indent_info)
   return denormalized_lines
 end
 
-local edit_code_block = function(bufnr, lang, text, range)
+local edit_code_block = function(bufnr, lang, match_lines, range)
   local base_filetype = vim.bo.filetype
-  local match_lines = vim.split(text, "\n")
   local filetype = settings.ft_from_lang(lang)
 
   -- trim empty lines
@@ -321,7 +320,8 @@ local edit_code_block = function(bufnr, lang, text, range)
     lang = lang,
   }))
 
-  vim.cmd("file " .. settings.create_tmp_filepath(filetype))
+  local tmpfile = settings.create_tmp_filepath(filetype, bufnr)
+  vim.cmd("file " .. tmpfile)
   vim.bo.filetype = filetype
 
   vim.api.nvim_buf_set_lines(vim.fn.bufnr(), 0, -1, true, lines_for_edit)
@@ -359,9 +359,10 @@ local edit_code_block = function(bufnr, lang, text, range)
     buffer = 0,
     callback = function()
       vim.schedule(function()
-        if vim.api.nvim_buf_is_loaded(float_bufnr) then
-          vim.cmd(string.format("bdelete! %d", float_bufnr))
-        end
+        pcall(function ()
+          vim.api.nvim_buf_delete(float_bufnr, { force = true })
+        end)
+        vim.loop.fs_unlink(tmpfile)
       end)
     end,
   })
@@ -381,13 +382,13 @@ M.edit_code_block_auto = function(line1, line2)
 
   if line2 then
     match_data.range[3] = line2
-    match_data.range[4] = 0 -- line2 is already +1 and gets trimmed later anyway
+    match_data.range[4] = #vim.fn.getline(line2)
   end
 
   local srow, scol, erow, ecol = unpack(match_data.range)
-  local text = table.concat(vim.api.nvim_buf_get_text(bufnr, srow, scol, erow, ecol, {}), "\n")
+  local match_lines = vim.api.nvim_buf_get_text(bufnr, srow, scol, erow, ecol, {})
 
-  edit_code_block(bufnr, match_data.lang, text, match_data.range)
+  edit_code_block(bufnr, match_data.lang, match_lines, match_data.range)
 end
 
 M.edit_code_block_manual = function(lang, line1, line2)
@@ -410,13 +411,13 @@ M.edit_code_block_manual = function(lang, line1, line2)
 
   if line2 then
     match_data.range[3] = line2
-    match_data.range[4] = 0
+    match_data.range[4] = #vim.fn.getline(line2)
   end
 
   local srow, scol, erow, ecol = unpack(match_data.range)
-  local text = table.concat(vim.api.nvim_buf_get_text(bufnr, srow, scol, erow, ecol, {}), "\n")
+  local match_lines = vim.api.nvim_buf_get_text(bufnr, srow, scol, erow, ecol, {})
 
-  edit_code_block(bufnr, match_data.lang, text, match_data.range)
+  edit_code_block(bufnr, match_data.lang, match_lines, match_data.range)
 end
 
 return M
