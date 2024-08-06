@@ -322,11 +322,13 @@ local edit_code_block = function(bufnr, lang, match_lines, range)
 
   local tmpfile = settings.create_tmp_filepath(filetype, bufnr)
   vim.cmd("file " .. tmpfile)
-  vim.bo.filetype = filetype
-
   vim.api.nvim_buf_set_lines(vim.fn.bufnr(), 0, -1, true, lines_for_edit)
   -- use nvim_exec to do this silently
   vim.api.nvim_exec("write!", true)
+
+  vim.cmd("edit " .. tmpfile)
+  vim.bo.filetype = filetype
+
   vim.api.nvim_win_set_cursor(0, float_cursor)
   settings.post_open_float(winnr)
 
